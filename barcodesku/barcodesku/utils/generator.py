@@ -128,17 +128,17 @@ def process_existing_items():
 			if needs_barcode:
 				bar_code, bar_type = generate_code(doc, target_apply_type="Barcode Only")
 				if bar_code:
-					if overwrite:
-						frappe.db.delete("Item Barcode", {"parent": item.name})
-					row = frappe.get_doc({
-						"doctype": "Item Barcode",
-						"parenttype": "Item",
-						"parentfield": "barcodes",
-						"parent": item.name,
-						"barcode": bar_code,
-						"barcode_type": bar_type
-					})
-					row.insert(ignore_permissions=True)
+					if overwrite or existing_barcodes:
+						frappe.db.sql("DELETE FROM `tabItem Barcode` WHERE parent=%s", item.name)
+					row_name = frappe.generate_hash(length=10)
+					frappe.db.sql("""
+						INSERT INTO `tabItem Barcode`
+							(name, creation, modified, modified_by, owner, idx,
+							 parent, parenttype, parentfield, barcode, barcode_type)
+						VALUES
+							(%s, NOW(), NOW(), 'Administrator', 'Administrator', 1,
+							 %s, 'Item', 'barcodes', %s, %s)
+					""", (row_name, item.name, bar_code, bar_type))
 					barcode_count += 1
 			else:
 				skip_count += 1
