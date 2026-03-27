@@ -5,6 +5,10 @@ app_description = "Barcode and SKU Auto Generator for items in ERPNext"
 app_email = "hello@apexlogic.com"
 app_license = "mit"
 
+doctype_js = {
+	"Item": "public/js/item_form.js"
+}
+
 custom_fields = {
 	"Item": [
 		{
