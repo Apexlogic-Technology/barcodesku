@@ -7,45 +7,42 @@ def execute():
 		frappe.delete_doc("Workspace", "Barcode SKU", ignore_permissions=True)
 		frappe.db.commit()
 
-	# 2. Add shortcuts directly to the Stock Workspace
+	# 2. Add shortcuts directly to the Stock Workspace using perfect Native V15 Card Layout
 	if frappe.db.exists("Workspace", "Stock"):
 		doc = frappe.get_doc("Workspace", "Stock")
-		links_to_add = [
+		
+		# A. Strip out any old messy injections
+		links_to_keep = []
+		for l in doc.links:
+			if l.label not in ["Barcode & SKU Tools", "Barcode Rules", "Barcode SKU Settings", "SKU Renamer", "Scanner Validation"]:
+				links_to_keep.append(l)
+		doc.links = links_to_keep
+
+		# B. Inject the proper Native Card Structure
+		new_links = [
+			{"type": "Card Break", "label": "Barcode & SKU Tools"},
 			{"type": "Link", "label": "Barcode Rules", "link_type": "DocType", "link_to": "Barcode Rule"},
 			{"type": "Link", "label": "Barcode SKU Settings", "link_type": "DocType", "link_to": "Barcode SKU Settings"},
 			{"type": "Link", "label": "SKU Renamer", "link_type": "DocType", "link_to": "SKU Renamer"},
 			{"type": "Link", "label": "Scanner Validation", "link_type": "Page", "link_to": "scanner-validation"}
 		]
 		
-		changed = False
-		for l in links_to_add:
-			exists = False
-			for row in doc.links:
-				if row.link_to == l["link_to"]:
-					exists = True
-					break
-			if not exists:
-				doc.append("links", l)
-				changed = True
+		for l in new_links:
+			doc.append("links", l)
 				
+		# C. Inject the visual card block into the content layout
 		try:
 			content = json.loads(doc.content or "[]")
-			already_added = False
-			for block in content:
-				if block.get("type") == "header" and block.get("data", {}).get("text", "") == "Barcode & SKU Tools":
-					already_added = True
-					break
-			if not already_added:
-				content.append({"id": frappe.generate_hash(length=8), "type": "header", "data": {"text": "Barcode & SKU Tools", "level": 4}})
-				content.append({"id": frappe.generate_hash(length=8), "type": "shortcut", "data": {"shortcut_name": "Barcode Rule"}})
-				content.append({"id": frappe.generate_hash(length=8), "type": "shortcut", "data": {"shortcut_name": "Barcode SKU Settings"}})
-				content.append({"id": frappe.generate_hash(length=8), "type": "shortcut", "data": {"shortcut_name": "SKU Renamer"}})
-				content.append({"id": frappe.generate_hash(length=8), "type": "shortcut", "data": {"shortcut_name": "Scanner Validation"}})
-				doc.content = json.dumps(content)
-				changed = True
+			
+			# Remove old header injections to keep it clean
+			content = [c for c in content if not (c.get("data", {}).get("text") == "Barcode & SKU Tools") and not (c.get("data", {}).get("card_name") == "Barcode & SKU Tools")]
+			
+			# Append the native Card layout block mapping to the Card Break label
+			content.append({"id": frappe.generate_hash(length=8), "type": "card", "data": {"card_name": "Barcode & SKU Tools"}})
+			
+			doc.content = json.dumps(content)
 		except Exception:
 			pass
 				
-		if changed:
-			doc.flags.ignore_permissions = True
-			doc.save()
+		doc.flags.ignore_permissions = True
+		doc.save()
