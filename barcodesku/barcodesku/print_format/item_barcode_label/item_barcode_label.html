@@ -1,0 +1,19 @@
+<div style="text-align: center; border: 1px solid #ccc; padding: 10px; width: 300px; margin: 0 auto;">
+    <h4 style="margin-bottom: 5px;">{{ doc.item_name }}</h4>
+    <p style="margin: 0; font-size: 12px; color: #555;">SKU: {{ doc.custom_sku }}</p>
+    {% set barcode = doc.barcodes[0].barcode if doc.barcodes else '' %}
+    {% if barcode %}
+        {% set file_url = frappe.db.get_value("File", {"attached_to_name": doc.name, "file_name": ["like", "%" + barcode + ".png"]}, "file_url") %}
+        {% if file_url %}
+            <div style="margin-top: 10px;">
+                <img src="{{ file_url }}" alt="Barcode" style="max-width: 100%; height: 60px;">
+            </div>
+            <p style="font-size: 10px; letter-spacing: 2px;">{{ barcode }}</p>
+        {% else %}
+            <p><strong>{{ barcode }}</strong></p>
+            <small>(Image not generated)</small>
+        {% endif %}
+    {% else %}
+        <p>No Barcode available</p>
+    {% endif %}
+</div>

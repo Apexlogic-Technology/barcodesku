@@ -1,0 +1,85 @@
+{
+ "actions": [],
+ "creation": "2024-03-27 10:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "rule_name",
+  "company",
+  "item_group",
+  "rule_type",
+  "prefix",
+  "current_sequence",
+  "sequence_length"
+ ],
+ "fields": [
+  {
+   "fieldname": "rule_name",
+   "fieldtype": "Data",
+   "label": "Rule Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company"
+  },
+  {
+   "fieldname": "item_group",
+   "fieldtype": "Link",
+   "label": "Item Group",
+   "options": "Item Group"
+  },
+  {
+   "default": "Category Prefix + Sequence",
+   "fieldname": "rule_type",
+   "fieldtype": "Select",
+   "label": "Rule Type",
+   "options": "Item Group & Name Abbreviation\nCategory Prefix + Sequence\nGS1 EAN-13\nCode 128 Sequence"
+  },
+  {
+   "depends_on": "eval:in_list(['Category Prefix + Sequence', 'GS1 EAN-13'], doc.rule_type)",
+   "fieldname": "prefix",
+   "fieldtype": "Data",
+   "label": "Prefix (e.g. ELEC- or 590)"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:in_list(['Category Prefix + Sequence', 'GS1 EAN-13', 'Code 128 Sequence'], doc.rule_type)",
+   "fieldname": "current_sequence",
+   "fieldtype": "Int",
+   "label": "Current Sequence"
+  },
+  {
+   "default": "5",
+   "depends_on": "eval:in_list(['Category Prefix + Sequence', 'Code 128 Sequence'], doc.rule_type)",
+   "fieldname": "sequence_length",
+   "fieldtype": "Int",
+   "label": "Sequence Length"
+  }
+ ],
+ "autoname": "field:rule_name",
+ "modified": "2024-03-27 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Barcodesku",
+ "name": "Barcode Rule",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
