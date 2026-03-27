@@ -20,7 +20,7 @@ custom_fields = {
 			"in_standard_filter": 1,
 			"in_list_view": 1,
 			"search_index": 1,
-			"read_only": 0,
+			"read_only": 1,
 			"no_copy": 1
 		}
 	],
