@@ -44,25 +44,34 @@ def _build_code_from_rule(rule, item_doc):
 	return f"SKU-{seq_str}", "Code-128"
 
 def get_active_rule(item_doc, apply_type="Both"):
-	"""Find the most specific applicable rule for this item."""
-	rule_filters = {"apply_to": ["in", [apply_type, "Both"]]}
+	"""
+	Fetch all rules for the given apply_type and find the most specific match.
+	Priority: item_group match > generic (blank item_group or 'All Item Groups')
+	Company field on Item is not reliable — we skip company filtering.
+	"""
+	all_rules = frappe.get_all(
+		"Barcode Rule",
+		filters={"apply_to": ["in", [apply_type, "Both"]]},
+		fields=["name", "item_group", "company"],
+		order_by="modified desc"
+	)
 	
-	company = item_doc.get("company")
-	item_group = item_doc.get("item_group")
+	if not all_rules:
+		return None
 	
-	specs = [
-		{"company": company, "item_group": item_group},
-		{"company": company, "item_group": ["is", "not set"]},
-		{"company": ["is", "not set"], "item_group": item_group},
-		{"company": ["is", "not set"], "item_group": ["is", "not set"]},
-	]
+	item_group = (item_doc.get("item_group") or "").strip()
 	
-	for extra in specs:
-		f = dict(rule_filters)
-		f.update(extra)
-		rules = frappe.get_all("Barcode Rule", filters=f, order_by="modified desc", limit=1)
-		if rules:
-			return frappe.get_doc("Barcode Rule", rules[0].name)
+	# Pass 1: Exact item_group match
+	for r in all_rules:
+		rule_ig = (r.item_group or "").strip()
+		if rule_ig and rule_ig not in ("All Item Groups",) and rule_ig == item_group:
+			return frappe.get_doc("Barcode Rule", r.name)
+	
+	# Pass 2: Generic rule (blank item_group OR "All Item Groups")
+	for r in all_rules:
+		rule_ig = (r.item_group or "").strip()
+		if not rule_ig or rule_ig == "All Item Groups":
+			return frappe.get_doc("Barcode Rule", r.name)
 	
 	return None
 
