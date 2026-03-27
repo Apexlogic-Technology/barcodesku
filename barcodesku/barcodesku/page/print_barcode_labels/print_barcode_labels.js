@@ -27,7 +27,7 @@ function render_page(page, wrapper) {
 				<div style="display: flex; gap: 8px;">
 					<button class="btn btn-primary" onclick="load_all_items()">Load All Items</button>
 					<button class="btn btn-default" onclick="clear_selection()">Clear</button>
-					<button class="btn btn-success" onclick="window.print()">🖨 Print</button>
+					<button class="btn btn-success" onclick="do_print()">🖨 Print / Save PDF</button>
 				</div>
 			</div>
 
@@ -205,4 +205,63 @@ function render_labels() {
 function remove_item(name) {
 	selected_items = selected_items.filter(i => i.name !== name);
 	render_labels();
+}
+
+function do_print() {
+	if (!selected_items.length) {
+		frappe.msgprint('No items selected. Load items first.');
+		return;
+	}
+	var copies = parseInt(document.getElementById('copies').value) || 1;
+
+	// Build self-contained label HTML cards
+	var cards_html = '';
+	selected_items.forEach(function(item) {
+		for (var c = 0; c < copies; c++) {
+			var uid = 'pbc_' + Math.random().toString(36).substr(2, 8);
+			cards_html += `
+				<div class="label-card" style="width:85mm;min-height:52mm;border:1.5px solid #444;border-radius:4px;padding:8px 10px;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;page-break-inside:avoid;background:white;font-family:Arial,sans-serif;margin:4px;vertical-align:top;">
+					<div style="font-size:10.5px;font-weight:bold;text-align:center;margin-bottom:3px;line-height:1.3;">${frappe.utils.escape_html(item.item_name || item.name)}</div>
+					${item.custom_sku ? `<div style="font-size:8.5px;color:#555;margin-bottom:5px;">SKU: ${frappe.utils.escape_html(item.custom_sku)}</div>` : ''}
+					${item.barcode ? `
+						<svg id="${uid}" data-barcode="${frappe.utils.escape_html(item.barcode)}"></svg>
+						<div style="font-size:7.5px;letter-spacing:1.5px;font-family:monospace;margin-top:2px;">${frappe.utils.escape_html(item.barcode)}</div>
+					` : '<div style="color:#bbb;font-size:10px;margin-top:10px;">No barcode</div>'}
+				</div>`;
+		}
+	});
+
+	var print_html = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Barcode Labels</title>
+<style>
+	body { margin: 8mm; background: white; }
+	@media print { body { margin: 5mm; } @page { margin: 5mm; } }
+</style>
+</head>
+<body>
+<div style="display:flex;flex-wrap:wrap;gap:6px;">
+${cards_html}
+</div>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
+<script>
+window.onload = function() {
+	document.querySelectorAll('svg[data-barcode]').forEach(function(el) {
+		try {
+			JsBarcode(el, el.getAttribute('data-barcode'), {
+				format: 'CODE128', width: 1.4, height: 42, displayValue: false, margin: 0
+			});
+		} catch(e) {}
+	});
+	setTimeout(function() { window.print(); }, 800);
+};
+<\/script>
+</body>
+</html>`;
+
+	var win = window.open('', '_blank');
+	win.document.write(print_html);
+	win.document.close();
 }
