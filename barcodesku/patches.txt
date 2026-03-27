@@ -1,1 +1,2 @@
 barcodesku.barcodesku.patches.v1_1.move_to_stock_workspace
+barcodesku.barcodesku.patches.v1_2.fix_stock_layout
