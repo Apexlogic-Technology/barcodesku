@@ -8,6 +8,21 @@ try:
 except ImportError:
 	barcode = None
 
+def validate(doc, method):
+	if doc.get("custom_sku"):
+		# Ensure unique SKU
+		exists = frappe.db.get_value("Item", {"custom_sku": doc.custom_sku, "name": ["!=", doc.name or ""]})
+		if exists:
+			frappe.throw(f"SKU '{doc.custom_sku}' is already assigned to Item {exists}.", frappe.UniqueValidationError)
+			
+	if doc.get("barcodes"):
+		# Ensure unique Barcodes
+		for row in doc.barcodes:
+			if row.barcode:
+				exists = frappe.db.get_value("Item Barcode", {"barcode": row.barcode, "parent": ["!=", doc.name or ""]})
+				if exists:
+					frappe.throw(f"Barcode '{row.barcode}' is already assigned to Item {exists}.", frappe.UniqueValidationError)
+
 def auto_generate_barcode_and_sku(doc, method):
 	try:
 		settings = frappe.get_single("Barcode SKU Settings")

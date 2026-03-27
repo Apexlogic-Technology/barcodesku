@@ -12,6 +12,10 @@ custom_fields = {
 			"label": "SKU",
 			"fieldtype": "Data",
 			"insert_after": "item_code",
+			"in_global_search": 1,
+			"in_standard_filter": 1,
+			"in_list_view": 1,
+			"search_index": 1,
 			"read_only": 0,
 			"no_copy": 1
 		}
@@ -29,6 +33,7 @@ custom_fields = {
 
 doc_events = {
 	"Item": {
+		"validate": "barcodesku.barcodesku.utils.item_hooks.validate",
 		"before_save": "barcodesku.barcodesku.utils.item_hooks.auto_generate_barcode_and_sku",
 		"on_update": "barcodesku.barcodesku.utils.item_hooks.generate_barcode_image",
 		"before_insert": "barcodesku.barcodesku.utils.item_hooks.auto_generate_barcode_and_sku"
