@@ -13,18 +13,21 @@ def calculate_ean13_checksum(code12):
 def get_active_rule(item_doc, apply_type="Both"):
 	rule_filters = {"apply_to": ["in", [apply_type, "Both"]]}
 	
+	company = item_doc.get("company")
+	item_group = item_doc.get("item_group")
+	
 	f1 = dict(rule_filters)
-	f1.update({"company": item_doc.company, "item_group": item_doc.item_group})
+	f1.update({"company": company, "item_group": item_group})
 	rules = frappe.get_all("Barcode Rule", filters=f1, order_by="modified desc", limit=1)
 	
 	if not rules:
 		f2 = dict(rule_filters)
-		f2.update({"company": item_doc.company, "item_group": ["is", "not set"]})
+		f2.update({"company": company, "item_group": ["is", "not set"]})
 		rules = frappe.get_all("Barcode Rule", filters=f2, order_by="modified desc", limit=1)
 		
 	if not rules:
 		f3 = dict(rule_filters)
-		f3.update({"company": ["is", "not set"], "item_group": item_doc.item_group})
+		f3.update({"company": ["is", "not set"], "item_group": item_group})
 		rules = frappe.get_all("Barcode Rule", filters=f3, order_by="modified desc", limit=1)
 	
 	if not rules:
@@ -100,7 +103,7 @@ def process_existing_items():
 		return
 		
 	overwrite = settings.overwrite_existing
-	items = frappe.get_all("Item", fields=["name", "item_group", "item_name", "custom_sku", "company"])
+	items = frappe.get_all("Item", fields=["name", "item_group", "item_name", "custom_sku"])
 	
 	count = 0
 	for item in items:
