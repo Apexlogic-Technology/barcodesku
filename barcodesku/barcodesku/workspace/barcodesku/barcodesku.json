@@ -1,10 +1,9 @@
 {
- "content": "[\n  {\n   \"id\": \"shortcuts\",\n   \"type\": \"shortcut\"\n  }\n]",
+ "content": "[\n  {\n   \"id\": \"charts\",\n   \"type\": \"chart\",\n   \"data\": {\n    \"chart_name\": \"Items Barcode Coverage\"\n   }\n  },\n  {\n   \"id\": \"shortcuts\",\n   \"type\": \"shortcut\"\n  }\n]",
  "creation": "2024-03-27 10:00:00.000000",
  "custom_blocks": [],
  "docstatus": 0,
  "doctype": "Workspace",
- "for_user": "",
  "hide_custom_blocks": 0,
  "icon": "barcode",
  "idx": 0,
@@ -37,6 +36,19 @@
    "name": "Barcode SKU Settings",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "description": "Validate Barcodes via Scanner",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Barcode Scanner Validation",
+   "link_count": 0,
+   "link_to": "scanner-validation",
+   "link_type": "Page",
+   "name": "Barcode Scanner",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
  "modified": "2024-03-27 10:00:00.000000",
@@ -44,7 +56,6 @@
  "module": "Barcodesku",
  "name": "Barcode SKU",
  "owner": "Administrator",
- "parent_page": "",
  "public": 1,
  "sequence_id": 10.0,
  "title": "Barcode SKU"

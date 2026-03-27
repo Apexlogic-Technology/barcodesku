@@ -15,6 +15,15 @@ custom_fields = {
 			"read_only": 0,
 			"no_copy": 1
 		}
+	],
+	"Item Barcode": [
+		{
+			"fieldname": "custom_warehouse",
+			"label": "Warehouse",
+			"fieldtype": "Link",
+			"options": "Warehouse",
+			"insert_after": "barcode_type"
+		}
 	]
 }
 

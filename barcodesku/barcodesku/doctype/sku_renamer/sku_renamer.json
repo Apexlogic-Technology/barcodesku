@@ -1,0 +1,70 @@
+{
+ "actions": [],
+ "creation": "2024-03-27 10:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "item_link",
+  "rename_custom_sku",
+  "new_custom_sku",
+  "rename_item_code",
+  "new_item_code",
+  "execute_rename"
+ ],
+ "fields": [
+  {
+   "fieldname": "item_link",
+   "fieldtype": "Link",
+   "label": "Select Item",
+   "options": "Item",
+   "reqd": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "rename_custom_sku",
+   "fieldtype": "Check",
+   "label": "Rename Custom SKU"
+  },
+  {
+   "depends_on": "rename_custom_sku",
+   "fieldname": "new_custom_sku",
+   "fieldtype": "Data",
+   "label": "New Custom SKU"
+  },
+  {
+   "default": "0",
+   "fieldname": "rename_item_code",
+   "fieldtype": "Check",
+   "label": "Rename Globally (Item Code/ID)"
+  },
+  {
+   "depends_on": "rename_item_code",
+   "fieldname": "new_item_code",
+   "fieldtype": "Data",
+   "label": "New Item Code"
+  },
+  {
+   "fieldname": "execute_rename",
+   "fieldtype": "Button",
+   "label": "Execute Rename"
+  }
+ ],
+ "issingle": 1,
+ "modified": "2024-03-27 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Barcodesku",
+ "name": "SKU Renamer",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ]
+}

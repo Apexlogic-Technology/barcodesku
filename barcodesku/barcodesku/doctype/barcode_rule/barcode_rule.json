@@ -7,6 +7,7 @@
   "rule_name",
   "company",
   "item_group",
+  "warehouse",
   "rule_type",
   "prefix",
   "current_sequence",
@@ -31,6 +32,12 @@
    "fieldtype": "Link",
    "label": "Item Group",
    "options": "Item Group"
+  },
+  {
+   "fieldname": "warehouse",
+   "fieldtype": "Link",
+   "label": "Target Warehouse",
+   "options": "Warehouse"
   },
   {
    "default": "Category Prefix + Sequence",
