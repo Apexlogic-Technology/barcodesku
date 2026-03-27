@@ -31,6 +31,8 @@ custom_fields = {
 	]
 }
 
+after_migrate = "barcodesku.barcodesku.setup.after_migrate"
+
 doc_events = {
 	"Item": {
 		"validate": "barcodesku.barcodesku.utils.item_hooks.validate",
