@@ -7,7 +7,8 @@
   "enable_auto_generation",
   "barcode_type",
   "overwrite_existing",
-  "generate_for_existing_items"
+  "generate_for_existing_items",
+  "undo_mass_generation"
  ],
  "fields": [
   {
@@ -33,6 +34,11 @@
    "fieldname": "generate_for_existing_items",
    "fieldtype": "Button",
    "label": "Generate For Existing Items"
+  },
+  {
+   "fieldname": "undo_mass_generation",
+   "fieldtype": "Button",
+   "label": "Undo Mass Generation (Clear All SKUs/Barcodes)"
   }
  ],
  "issingle": 1,

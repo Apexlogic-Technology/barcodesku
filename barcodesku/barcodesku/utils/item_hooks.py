@@ -34,17 +34,16 @@ def auto_generate_barcode_and_sku(doc, method):
 	needs_sku = not doc.get("custom_sku")
 	needs_barcode = not has_barcode(doc)
 
-	if needs_sku or needs_barcode:
-		code, btype = generate_code(doc)
+	if needs_sku:
+		code, btype = generate_code(doc, target_apply_type="SKU Only")
+		doc.custom_sku = code
 		
-		if needs_sku:
-			doc.custom_sku = code
-		
-		if needs_barcode:
-			doc.append("barcodes", {
-				"barcode": code,
-				"barcode_type": btype 
-			})
+	if needs_barcode:
+		code, btype = generate_code(doc, target_apply_type="Barcode Only")
+		doc.append("barcodes", {
+			"barcode": code,
+			"barcode_type": btype 
+		})
 
 def generate_barcode_image(doc, method):
 	if getattr(doc, "flags", {}).get("ignore_barcode_image"):

@@ -11,9 +11,18 @@
   "rule_type",
   "prefix",
   "current_sequence",
-  "sequence_length"
+  "sequence_length",
+  "apply_to"
  ],
  "fields": [
+  {
+   "default": "Both",
+   "fieldname": "apply_to",
+   "fieldtype": "Select",
+   "label": "Apply Rule To",
+   "options": "Both\nSKU Only\nBarcode Only",
+   "reqd": 1
+  },
   {
    "fieldname": "rule_name",
    "fieldtype": "Data",

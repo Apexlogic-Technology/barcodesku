@@ -10,40 +10,34 @@ def calculate_ean13_checksum(code12):
 	check_digit = (10 - ((sum1 + sum2) % 10)) % 10
 	return str(check_digit)
 
-def get_active_rule(item_doc):
-	# Try to find specific rule by company and item group
-	rules = frappe.get_all("Barcode Rule", filters={
-		"company": item_doc.company,
-		"item_group": item_doc.item_group
-	}, order_by="modified desc", limit=1)
+def get_active_rule(item_doc, apply_type="Both"):
+	rule_filters = {"apply_to": ["in", [apply_type, "Both"]]}
+	
+	f1 = dict(rule_filters)
+	f1.update({"company": item_doc.company, "item_group": item_doc.item_group})
+	rules = frappe.get_all("Barcode Rule", filters=f1, order_by="modified desc", limit=1)
 	
 	if not rules:
-		# Try company only
-		rules = frappe.get_all("Barcode Rule", filters={
-			"company": item_doc.company,
-			"item_group": ["is", "not set"]
-		}, order_by="modified desc", limit=1)
+		f2 = dict(rule_filters)
+		f2.update({"company": item_doc.company, "item_group": ["is", "not set"]})
+		rules = frappe.get_all("Barcode Rule", filters=f2, order_by="modified desc", limit=1)
 		
 	if not rules:
-		# Try item group only
-		rules = frappe.get_all("Barcode Rule", filters={
-			"company": ["is", "not set"],
-			"item_group": item_doc.item_group
-		}, order_by="modified desc", limit=1)
+		f3 = dict(rule_filters)
+		f3.update({"company": ["is", "not set"], "item_group": item_doc.item_group})
+		rules = frappe.get_all("Barcode Rule", filters=f3, order_by="modified desc", limit=1)
 	
 	if not rules:
-		# Generic rule
-		rules = frappe.get_all("Barcode Rule", filters={
-			"company": ["is", "not set"],
-			"item_group": ["is", "not set"]
-		}, order_by="modified desc", limit=1)
+		f4 = dict(rule_filters)
+		f4.update({"company": ["is", "not set"], "item_group": ["is", "not set"]})
+		rules = frappe.get_all("Barcode Rule", filters=f4, order_by="modified desc", limit=1)
 	
 	if rules:
 		return frappe.get_doc("Barcode Rule", rules[0].name)
 	return None
 
-def generate_code(item_doc):
-	rule = get_active_rule(item_doc)
+def generate_code(item_doc, target_apply_type="Both"):
+	rule = get_active_rule(item_doc, apply_type=target_apply_type)
 	
 	if not rule:
 		# Fallback to Phase 1 Custom Logic
@@ -78,15 +72,13 @@ def generate_code(item_doc):
 		return seq_str, "Code 128"
 		
 	if t == "GS1 EAN-13":
-		# EAN 13 is 13 digits: Prefix + Sequence + Checksum. Total must be 12 before checksum.
 		code12 = f"{prefix}{seq_str}"
-		code12 = "".join([c for c in code12 if c.isdigit()]) # strip letters just in case
-		code12 = code12.rjust(12, '0')[:12] # ensure exactly 12 digits
+		code12 = "".join([c for c in code12 if c.isdigit()]) 
+		code12 = code12.rjust(12, '0')[:12] 
 		check = calculate_ean13_checksum(code12)
 		return f"{code12}{check}", "EAN-13"
 		
 	return f"SKU-{seq_str}", "Code 128"
-
 
 def has_barcode(doc):
 	if getattr(doc, "barcodes", None):
@@ -117,29 +109,47 @@ def process_existing_items():
 			needs_sku = not doc.custom_sku or overwrite
 			needs_barcode = not has_barcode(doc) or overwrite
 			
-			if needs_sku or needs_barcode:
-				code, btype = generate_code(doc)
+			changed = False
+			if needs_sku:
+				code, _ = generate_code(doc, target_apply_type="SKU Only")
+				doc.custom_sku = code
+				changed = True
 				
-				changed = False
-				if needs_sku:
-					doc.custom_sku = code
-					changed = True
-					
-				if needs_barcode:
-					if overwrite:
-						doc.set("barcodes", [])
-					doc.append("barcodes", {
-						"barcode": code,
-						"barcode_type": btype 
-					})
-					changed = True
-					
-				if changed:
-					doc.flags.ignore_permissions = True
-					doc.flags.ignore_mandatory = True
-					doc.save()
-					count += 1
+			if needs_barcode:
+				code, btype = generate_code(doc, target_apply_type="Barcode Only")
+				if overwrite:
+					doc.set("barcodes", [])
+				doc.append("barcodes", {
+					"barcode": code,
+					"barcode_type": btype 
+				})
+				changed = True
+				
+			if changed:
+				doc.flags.ignore_permissions = True
+				doc.flags.ignore_mandatory = True
+				doc.save()
+				count += 1
 		except Exception as e:
 			frappe.log_error(title="Barcode Generation Error", message=f"Failed for {item.name}: {str(e)}")
 			
+	frappe.db.commit()
+
+@frappe.whitelist()
+def undo_mass_generation():
+	frappe.enqueue("barcodesku.barcodesku.utils.generator.process_undo_mass_generation", queue="long", timeout=1500)
+	return "Enqueued"
+
+def process_undo_mass_generation():
+	items = frappe.get_all("Item", filters={"custom_sku": ["!=", ""]}, pluck="name")
+	for item_name in items:
+		try:
+			doc = frappe.get_doc("Item", item_name)
+			doc.custom_sku = ""
+			doc.set("barcodes", [])
+			doc.flags.ignore_permissions = True
+			doc.flags.ignore_mandatory = True
+			doc.save()
+		except Exception:
+			pass
 	frappe.db.commit()

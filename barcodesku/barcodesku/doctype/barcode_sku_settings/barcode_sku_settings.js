@@ -16,5 +16,17 @@ frappe.ui.form.on('Barcode SKU Settings', {
 				}
 			});
 		});
+	},
+	undo_mass_generation: function(frm) {
+		frappe.confirm('DANGER: This will universally wipe all Custom SKUs and Barcode child records across all items so you can start completely fresh. Are you perfectly sure?', () => {
+			frappe.call({
+				method: "barcodesku.barcodesku.utils.generator.undo_mass_generation",
+				callback: function(r) {
+					if(!r.exc) {
+						frappe.msgprint('Background Undo job enqueued successfully. Wait a few moments.');
+					}
+				}
+			});
+		});
 	}
 });
