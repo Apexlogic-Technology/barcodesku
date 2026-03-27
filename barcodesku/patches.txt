@@ -1,1 +1,1 @@
-barcodesku.barcodesku.patches.v1_1.move_to_stock_workspace.execute
+barcodesku.barcodesku.patches.v1_1.move_to_stock_workspace

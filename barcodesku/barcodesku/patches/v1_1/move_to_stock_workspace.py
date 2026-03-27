@@ -28,6 +28,24 @@ def execute():
 				doc.append("links", l)
 				changed = True
 				
+		try:
+			content = json.loads(doc.content or "[]")
+			already_added = False
+			for block in content:
+				if block.get("type") == "header" and block.get("data", {}).get("text", "") == "Barcode & SKU Tools":
+					already_added = True
+					break
+			if not already_added:
+				content.append({"id": frappe.generate_hash(length=8), "type": "header", "data": {"text": "Barcode & SKU Tools", "level": 4}})
+				content.append({"id": frappe.generate_hash(length=8), "type": "shortcut", "data": {"shortcut_name": "Barcode Rule"}})
+				content.append({"id": frappe.generate_hash(length=8), "type": "shortcut", "data": {"shortcut_name": "Barcode SKU Settings"}})
+				content.append({"id": frappe.generate_hash(length=8), "type": "shortcut", "data": {"shortcut_name": "SKU Renamer"}})
+				content.append({"id": frappe.generate_hash(length=8), "type": "shortcut", "data": {"shortcut_name": "Scanner Validation"}})
+				doc.content = json.dumps(content)
+				changed = True
+		except Exception:
+			pass
+				
 		if changed:
 			doc.flags.ignore_permissions = True
 			doc.save()
