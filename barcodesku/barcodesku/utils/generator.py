@@ -90,43 +90,72 @@ def generate_for_existing():
 def process_existing_items():
 	settings = frappe.get_single("Barcode SKU Settings")
 	if not settings.enable_auto_generation:
+		frappe.log_error(title="Barcode SKU: Skipped", message="Auto generation is disabled in settings.")
 		return
 		
 	overwrite = settings.overwrite_existing
 	items = frappe.get_all("Item", fields=["name", "item_group", "item_name"])
 	
+	sku_count = 0
+	barcode_count = 0
+	skip_count = 0
+
 	for item in items:
 		try:
 			doc = frappe.get_doc("Item", item.name)
-			needs_sku = not doc.get("custom_sku") or overwrite
-			needs_barcode = not has_barcode(doc) or overwrite
-			changed = False
-
+			
+			# --- SKU ---
+			existing_sku = frappe.db.get_value("Item", item.name, "custom_sku")
+			needs_sku = not existing_sku or overwrite
 			if needs_sku:
 				sku_code, _ = generate_code(doc, target_apply_type="SKU Only")
 				if sku_code:
-					doc.custom_sku = sku_code
-					changed = True
+					frappe.db.set_value("Item", item.name, "custom_sku", sku_code, update_modified=False)
+					sku_count += 1
 
+			# --- Barcode ---
+			existing_barcodes = frappe.get_all("Item Barcode", filters={"parent": item.name})
+			needs_barcode = not existing_barcodes or overwrite
 			if needs_barcode:
 				bar_code, bar_type = generate_code(doc, target_apply_type="Barcode Only")
 				if bar_code:
 					if overwrite:
-						doc.set("barcodes", [])
-					doc.append("barcodes", {
+						frappe.db.delete("Item Barcode", {"parent": item.name})
+					row = frappe.get_doc({
+						"doctype": "Item Barcode",
+						"parenttype": "Item",
+						"parentfield": "barcodes",
+						"parent": item.name,
 						"barcode": bar_code,
 						"barcode_type": bar_type
 					})
-					changed = True
-				
-			if changed:
-				doc.flags.ignore_permissions = True
-				doc.flags.ignore_mandatory = True
-				doc.save()
+					row.insert(ignore_permissions=True)
+					barcode_count += 1
+			else:
+				skip_count += 1
+
 		except Exception as e:
-			frappe.log_error(title="Barcode Generation Error", message=f"Failed for {item.name}: {str(e)}")
+			frappe.log_error(title=f"Barcode SKU Error: {item.name}", message=frappe.get_traceback())
 			
 	frappe.db.commit()
+	frappe.log_error(
+		title="Barcode SKU: Generation Complete",
+		message=f"SKUs written: {sku_count} | Barcodes written: {barcode_count} | Skipped (already had data): {skip_count}"
+	)
+
+@frappe.whitelist()
+def diagnose():
+	"""Returns diagnostic info to help debug generation issues."""
+	has_col = frappe.db.has_column("Item", "custom_sku")
+	sku_rule = frappe.get_all("Barcode Rule", filters={"apply_to": ["in", ["SKU Only", "Both"]]}, pluck="name")
+	bar_rule = frappe.get_all("Barcode Rule", filters={"apply_to": ["in", ["Barcode Only", "Both"]]}, pluck="name")
+	sample = frappe.db.get_value("Item", {}, ["name", "custom_sku"], as_dict=True) or {}
+	return {
+		"custom_sku_column_exists": has_col,
+		"sku_rules": sku_rule,
+		"barcode_rules": bar_rule,
+		"sample_item": sample
+	}
 
 @frappe.whitelist()
 def undo_mass_generation():
@@ -137,12 +166,8 @@ def process_undo_mass_generation():
 	items = frappe.get_all("Item", pluck="name")
 	for item_name in items:
 		try:
-			doc = frappe.get_doc("Item", item_name)
-			doc.custom_sku = ""
-			doc.set("barcodes", [])
-			doc.flags.ignore_permissions = True
-			doc.flags.ignore_mandatory = True
-			doc.save()
+			frappe.db.set_value("Item", item_name, "custom_sku", "", update_modified=False)
+			frappe.db.delete("Item Barcode", {"parent": item_name})
 		except Exception:
 			pass
 	frappe.db.commit()
